@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# USAGE: cci_detail <SL instance numeric ID>
+# will wait until instance gets provisioned and root password is ready
+# print public ip and root password
+
+cci_id=$1
+
+cci_ip=`sl cci detail --password --format=raw $cci_id | grep public_ip | awk '{print $2}'`
+
+cci_pass=""
+while [ -z "$cci_pass" ]; do
+    sleep 2
+    cci_pass=`sl cci detail --password --format=raw $cci_id | grep users | awk '{print $3}'`
+done
+
+echo $cci_ip
+echo $cci_pass
+
