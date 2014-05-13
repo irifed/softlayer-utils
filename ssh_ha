@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# USAGE: ssh_ha <SL instance id (numeric or name)> < pri | sec >
+#
+# wait until instance gets provisioned and ssh to either pri or sec instance of the HA pair
+# requires 'sshpass' installed
+
+ha_id=$1
+if [ $2 == "pri" ]; then
+    cci_id=`sl cci list | grep $ha_id | head -n1 | awk '{print $1}'`
+elif [ $2 == "sec" ]; then
+    cci_id=`sl cci list | grep $ha_id | tail -n1 | awk '{print $1}'`
+fi
+
+cci_ip=`sl cci detail --password --format=raw $cci_id | grep public_ip | awk '{print $2}'`
+
+cci_pass=""
+while [ -z "$cci_pass" ]; do
+    sleep 2
+    cci_pass=`sl cci detail --password --format=raw $cci_id | grep users | awk '{print $3}'`
+done
+
+sshpass -p "$cci_pass" ssh -o StrictHostKeyChecking=no root@"$cci_ip"
+
