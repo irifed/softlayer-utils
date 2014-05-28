@@ -1,0 +1,27 @@
+#!/bin/bash -x
+
+# USAGE: ssh_cci <SL instance id (numeric or name)> 
+#
+# wait until instance gets provisioned and ssh to it
+# requires 'sshpass' installed
+
+# TODO edge cases: check arguments, etc
+
+cci_id=$1
+
+# for name instead of id
+# cci_id=`sl cci list | grep $cci_id | head -n1 | awk '{print $1}'`
+
+
+cci_pass=`sl cci detail --password --format=raw $cci_id | grep users | awk '{print $3}'`
+while [ -z "$cci_pass" ]; do
+    sleep 2
+    cci_pass=`sl cci detail --password --format=raw $cci_id | grep users | awk '{print $3}'`
+done
+
+cci_ip=`sl cci detail --password --format=raw $cci_id | grep public_ip | awk '{print $2}'`
+
+# overwrite host fingerpring in known_hosts 
+ssh-keygen -R $cci_ip
+sshpass -p "$cci_pass" ssh -o StrictHostKeyChecking=no root@"$cci_ip"
+
